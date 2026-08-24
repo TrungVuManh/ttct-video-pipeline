@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TTCT Video Pipeline — Hướng dẫn sử dụng</title>
+<meta name="description" content="Biến kịch bản Word + slide PowerPoint thành video bài giảng tiếng Việt có giọng đọc AI, dùng VieNeu-TTS chạy hoàn toàn trên máy.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+<style>
+:root{
+  --bg:#fbfaf8; --bg-elev:#ffffff; --bg-sunk:#f2f0ec;
+  --fg:#1c1b19; --fg-muted:#5f5b54; --fg-faint:#8b867d;
+  --line:#e3dfd8; --line-strong:#cfc9bf;
+  --accent:#b0532a; --accent-soft:#fdf0e8;
+  --code-bg:#211f1c; --code-fg:#e9e4db;
+  --warn-bg:#fdf6e3; --warn-line:#d9b45a;
+  --ok-bg:#eef5ee; --ok-line:#7ba37e;
+  --mono:ui-monospace,"SFMono-Regular","Cascadia Code","Consolas","Liberation Mono",monospace;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#15140f; --bg-elev:#1d1c17; --bg-sunk:#100f0c;
+    --fg:#eeeae1; --fg-muted:#aaa498; --fg-faint:#7d776c;
+    --line:#2f2d26; --line-strong:#413e35;
+    --accent:#e79068; --accent-soft:#2a1d15;
+    --code-bg:#0e0d0b; --code-fg:#e9e4db;
+    --warn-bg:#2a2416; --warn-line:#7d6a33;
+    --ok-bg:#18231a; --ok-line:#4a6b4d;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15140f; --bg-elev:#1d1c17; --bg-sunk:#100f0c;
+  --fg:#eeeae1; --fg-muted:#aaa498; --fg-faint:#7d776c;
+  --line:#2f2d26; --line-strong:#413e35;
+  --accent:#e79068; --accent-soft:#2a1d15;
+  --code-bg:#0e0d0b; --code-fg:#e9e4db;
+  --warn-bg:#2a2416; --warn-line:#7d6a33;
+  --ok-bg:#18231a; --ok-line:#4a6b4d;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--sans); font-size:16px; line-height:1.68;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 1.25rem}
+.grid{display:grid;grid-template-columns:236px minmax(0,1fr);gap:3rem;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr;gap:0}}
+
+/* ---------- hero ---------- */
+header.hero{
+  border-bottom:1px solid var(--line);
+  background:
+    radial-gradient(80rem 24rem at 12% -8rem, var(--accent-soft), transparent 70%),
+    var(--bg-elev);
+}
+.hero-inner{padding:3.2rem 0 2.6rem}
+.eyebrow{
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 .85rem;font-weight:600;
+}
+h1{font-size:clamp(1.9rem,4.2vw,2.7rem);line-height:1.16;margin:0 0 .8rem;letter-spacing:-.02em;font-weight:700}
+.lede{font-size:1.09rem;color:var(--fg-muted);max-width:62ch;margin:0 0 1.6rem}
+.lede strong{color:var(--fg);font-weight:600}
+.btn-row{display:flex;flex-wrap:wrap;gap:.6rem}
+.btn{
+  display:inline-flex;align-items:center;gap:.45rem;
+  padding:.56rem 1.05rem;border-radius:7px;text-decoration:none;
+  font-size:.9rem;font-weight:550;border:1px solid var(--line-strong);
+  color:var(--fg);background:var(--bg-elev);transition:.15s;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08);color:#fff}
+
+/* ---------- pipeline diagram ---------- */
+.pipe{margin:2.2rem 0 0;overflow-x:auto}
+.pipe svg{display:block;min-width:660px;max-width:100%;height:auto}
+
+/* ---------- sidebar ---------- */
+nav.toc{position:sticky;top:1.5rem;padding:2.5rem 0;font-size:.875rem}
+@media (max-width:900px){
+  nav.toc{position:static;padding:1.5rem 0 .5rem;border-bottom:1px solid var(--line)}
+  nav.toc ol{columns:2;column-gap:1.5rem}
+}
+nav.toc h2{
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--fg-faint);margin:0 0 .85rem;font-weight:600;
+}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+nav.toc li{counter-increment:toc;margin:0;break-inside:avoid}
+nav.toc a{
+  display:block;padding:.3rem 0 .3rem .5rem;color:var(--fg-muted);
+  text-decoration:none;border-left:2px solid transparent;transition:.13s;
+}
+nav.toc a::before{content:counter(toc) ".";color:var(--fg-faint);margin-right:.45rem;font-family:var(--mono);font-size:.8em}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent)}
+
+/* ---------- article ---------- */
+main{padding:2.5rem 0 5rem;min-width:0}
+section{scroll-margin-top:1.5rem;padding-bottom:.5rem}
+section + section{margin-top:3.2rem;padding-top:3.2rem;border-top:1px solid var(--line)}
+h2.sec{font-size:1.5rem;margin:0 0 1.1rem;letter-spacing:-.015em;font-weight:680;display:flex;gap:.65rem;align-items:baseline}
+h2.sec .num{font-family:var(--mono);font-size:.9rem;color:var(--accent);font-weight:600}
+h3{font-size:1.06rem;margin:2rem 0 .6rem;font-weight:640;letter-spacing:-.01em}
+p{margin:0 0 1rem}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1rem;padding-left:1.3rem}
+li{margin:.3rem 0}
+hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
+
+/* ---------- code ---------- */
+code{
+  font-family:var(--mono);font-size:.86em;
+  background:var(--bg-sunk);border:1px solid var(--line);
+  padding:.1em .38em;border-radius:4px;
+}
+pre{
+  background:var(--code-bg);color:var(--code-fg);
+  padding:1rem 1.1rem;border-radius:9px;overflow-x:auto;
+  margin:0 0 1.15rem;font-size:.845rem;line-height:1.6;
+  border:1px solid var(--line-strong);
+}
+pre code{background:none;border:0;padding:0;color:inherit;font-size:1em}
+.cmt{color:#8f8778}
+.kw{color:#e79068}
+.str{color:#a3c98f}
+
+/* ---------- tables ---------- */
+.tbl{overflow-x:auto;margin:0 0 1.3rem;border:1px solid var(--line);border-radius:9px;background:var(--bg-elev)}
+table{border-collapse:collapse;width:100%;font-size:.885rem;min-width:460px}
+th,td{text-align:left;padding:.6rem .85rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{
+  background:var(--bg-sunk);font-weight:620;font-size:.76rem;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--fg-muted);white-space:nowrap;
+}
+tr:last-child td{border-bottom:0}
+
+/* ---------- callouts ---------- */
+.note{
+  border-left:3px solid var(--line-strong);background:var(--bg-elev);
+  padding:.85rem 1.1rem;border-radius:0 8px 8px 0;margin:0 0 1.2rem;font-size:.925rem;
+}
+.note p:last-child{margin-bottom:0}
+.note.warn{border-left-color:var(--warn-line);background:var(--warn-bg)}
+.note.tip{border-left-color:var(--ok-line);background:var(--ok-bg)}
+.note .tag{font-weight:650;margin-right:.35rem}
+
+/* ---------- misc ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.85rem;margin:0 0 1.4rem}
+.card{border:1px solid var(--line);border-radius:9px;padding:.95rem 1.05rem;background:var(--bg-elev)}
+.card .k{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:.3rem}
+.card .v{font-size:1.35rem;font-weight:660;letter-spacing:-.02em;line-height:1.2}
+.card .d{font-size:.83rem;color:var(--fg-muted);margin-top:.25rem}
+
+footer{border-top:1px solid var(--line);background:var(--bg-elev);padding:2.2rem 0;font-size:.875rem;color:var(--fg-muted)}
+footer a{color:var(--accent)}
+.theme-btn{
+  position:fixed;right:1rem;bottom:1rem;z-index:50;
+  width:2.6rem;height:2.6rem;border-radius:50%;cursor:pointer;
+  border:1px solid var(--line-strong);background:var(--bg-elev);color:var(--fg);
+  font-size:1.05rem;line-height:1;display:grid;place-items:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.14);
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <p class="eyebrow">Kịch bản .docx + Slide .pptx → Video bài giảng</p>
+    <h1>TTCT Video Pipeline</h1>
+    <p class="lede">
+      Biến <strong>kịch bản Word</strong> và <strong>bài trình chiếu PowerPoint</strong> thành
+      <strong>video bài giảng hoàn chỉnh</strong> có giọng đọc tiếng Việt — dùng mô hình TTS mã nguồn mở
+      <strong>VieNeu-TTS</strong>, chạy hoàn toàn trên máy, không cần API key, không tốn phí.
+    </p>
+    <div class="btn-row">
+      <a class="btn primary" href="https://github.com/TrungVuManh/ttct-video-pipeline">⚙︎ Mã nguồn trên GitHub</a>
+      <a class="btn" href="#cai-dat">Bắt đầu cài đặt</a>
+      <a class="btn" href="#chay">Chạy pipeline</a>
+    </div>
+
+    <div class="pipe" role="img" aria-label="Sơ đồ pipeline: kịch bản docx và slide pptx đi qua 5 bước để ra video mp4">
+      <svg viewBox="0 0 900 246" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g font-family="ui-monospace,Consolas,monospace" font-size="12.5" color="var(--fg-faint)">
+          <!-- inputs -->
+          <g>
+            <rect x="4" y="46" width="146" height="42" rx="7" fill="var(--bg-sunk)" stroke="var(--line-strong)"/>
+            <text x="77" y="66" text-anchor="middle" fill="var(--fg)" font-weight="600">kịch bản</text>
+            <text x="77" y="80" text-anchor="middle" fill="var(--fg-muted)">.docx</text>
+            <rect x="4" y="150" width="146" height="42" rx="7" fill="var(--bg-sunk)" stroke="var(--line-strong)"/>
+            <text x="77" y="170" text-anchor="middle" fill="var(--fg)" font-weight="600">slide</text>
+            <text x="77" y="184" text-anchor="middle" fill="var(--fg-muted)">.pptx</text>
+          </g>
+          <!-- steps -->
+          <g>
+            <rect x="216" y="46" width="164" height="42" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
+            <text x="298" y="63" text-anchor="middle" fill="var(--fg)" font-weight="600">1 · tách lời bình</text>
+            <text x="298" y="79" text-anchor="middle" fill="var(--fg-muted)">theo Slide / VIDEO</text>
+
+            <rect x="216" y="150" width="164" height="42" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
+            <text x="298" y="167" text-anchor="middle" fill="var(--fg)" font-weight="600">3 · xuất ảnh slide</text>
+            <text x="298" y="183" text-anchor="middle" fill="var(--fg-muted)">PNG 1920×1080</text>
+
+            <rect x="446" y="46" width="164" height="42" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
+            <text x="528" y="63" text-anchor="middle" fill="var(--fg)" font-weight="600">2 · VieNeu-TTS</text>
+            <text x="528" y="79" text-anchor="middle" fill="var(--fg-muted)">slide_NN.wav</text>
+
+            <rect x="446" y="150" width="164" height="42" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
+            <text x="528" y="167" text-anchor="middle" fill="var(--fg)" font-weight="600">4 · ffmpeg ghép</text>
+            <text x="528" y="183" text-anchor="middle" fill="var(--fg-muted)">slide_NN.mp4</text>
+
+            <rect x="686" y="98" width="180" height="46" rx="7" fill="var(--bg-sunk)" stroke="var(--accent)" stroke-width="1.8"/>
+            <text x="776" y="116" text-anchor="middle" fill="var(--fg)" font-weight="700">5 · nối clip</text>
+            <text x="776" y="132" text-anchor="middle" fill="var(--fg-muted)">Video n - ….mp4</text>
+          </g>
+          <!-- arrows -->
+          <g stroke="var(--line-strong)" stroke-width="1.6" fill="none" marker-end="url(#ar)" color="var(--line-strong)">
+            <path d="M152 67 H212"/>
+            <path d="M152 171 H212"/>
+            <path d="M382 67 H442"/>
+            <path d="M382 171 H442"/>
+            <path d="M612 67 H646 V150 H612" transform="translate(0,0)"/>
+            <path d="M612 171 H682 V126"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<div class="wrap grid">
+
+<nav class="toc">
+  <h2>Nội dung</h2>
+  <ol>
+    <li><a href="#yeu-cau">Yêu cầu hệ thống</a></li>
+    <li><a href="#cai-dat">Cài đặt</a></li>
+    <li><a href="#du-lieu">Sắp xếp dữ liệu</a></li>
+    <li><a href="#kich-ban">Định dạng kịch bản</a></li>
+    <li><a href="#lessons">Khai báo LESSONS</a></li>
+    <li><a href="#giong">Chọn giọng đọc</a></li>
+    <li><a href="#chay">Chạy pipeline</a></li>
+    <li><a href="#ket-qua">Kết quả đầu ra</a></li>
+    <li><a href="#chay-lai">Sinh lại một phần</a></li>
+    <li><a href="#patch">Vá lỗi kịch bản</a></li>
+    <li><a href="#notebook">Notebook thăm dò</a></li>
+    <li><a href="#su-co">Xử lý sự cố</a></li>
+    <li><a href="#ma-nguon">Cấu trúc mã nguồn</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="yeu-cau">
+  <h2 class="sec"><span class="num">01</span> Yêu cầu hệ thống</h2>
+  <div class="cards">
+    <div class="card"><div class="k">Python</div><div class="v">3.10 – 3.11</div><div class="d">Khuyến nghị 3.11</div></div>
+    <div class="card"><div class="k">GPU</div><div class="v">Không bắt buộc</div><div class="d">Mặc định CPU qua ONNX Runtime</div></div>
+    <div class="card"><div class="k">ffmpeg</div><div class="v">Không cần cài</div><div class="d"><code>imageio-ffmpeg</code> tự tải binary</div></div>
+    <div class="card"><div class="k">Đĩa trống</div><div class="v">~1 GB / bài</div><div class="d">WAV 48 kHz + PNG + mp4</div></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Thành phần</th><th>Yêu cầu</th><th>Ghi chú</th></tr>
+    <tr><td><strong>Hệ điều hành</strong></td><td>Windows 10/11</td><td>Cần cho nhánh xuất ảnh bằng PowerPoint COM</td></tr>
+    <tr><td><strong>Microsoft PowerPoint</strong></td><td>Bản desktop bất kỳ</td><td>Cho ảnh slide đẹp nhất, đúng như PowerPoint hiển thị</td></tr>
+    <tr><td><strong>LibreOffice</strong></td><td><em>(tuỳ chọn)</em></td><td>Phương án dự phòng khi không có PowerPoint — chạy được trên Linux/macOS</td></tr>
+  </table></div>
+  <div class="note tip"><p><span class="tag">Về tốc độ —</span> trên CPU, TTS chiếm gần như toàn bộ thời gian chạy: mỗi slide mất khoảng vài chục giây tuỳ độ dài lời bình, nên một bài vài chục slide thường tính bằng chục phút. Vì pipeline <strong>resumable</strong>, cứ để chạy nền — ngắt lúc nào cũng được, chạy lại không mất công.</p></div>
+</section>
+
+<section id="cai-dat">
+  <h2 class="sec"><span class="num">02</span> Cài đặt</h2>
+<pre><code><span class="cmt">git</span> clone https://github.com/TrungVuManh/ttct-video-pipeline.git
+<span class="cmt">cd</span> ttct-video-pipeline
+
+<span class="cmt"># Tạo môi trường ảo (khuyến nghị)</span>
+python -m venv .venv
+.venv\Scripts\activate          <span class="cmt"># Windows</span>
+<span class="cmt"># source .venv/bin/activate     # Linux / macOS</span>
+
+pip install -r requirements.txt</code></pre>
+  <p>Lần chạy đầu tiên, <code>vieneu</code> sẽ <strong>tự tải trọng số mô hình</strong> về cache của Hugging Face — cần mạng, và mất một lúc. Các lần sau nạp từ cache nên nhanh hơn nhiều.</p>
+
+  <h3>Tăng tốc bằng GPU (tuỳ chọn)</h3>
+  <p>Nếu máy có GPU NVIDIA với CUDA ≥ 12.8, cài <code>torch</code> <strong>trước</strong> khi cài <code>vieneu</code>:</p>
+<pre><code>pip install torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
+pip install -r requirements.txt</code></pre>
+
+  <h3>Kiểm tra cài đặt xong</h3>
+<pre><code>python -c <span class="str">"from vieneu import Vieneu; t=Vieneu(); print('OK, sample_rate =', t.sample_rate)"</span></code></pre>
+</section>
+
+<section id="du-lieu">
+  <h2 class="sec"><span class="num">03</span> Sắp xếp dữ liệu đầu vào</h2>
+  <p>Repo <strong>không chứa</strong> file <code>.docx</code> / <code>.pptx</code> (tài liệu bài giảng, dung lượng lớn) — bạn tự đặt chúng vào máy rồi trỏ đường dẫn trong <code>LESSONS</code>. Cấu trúc gợi ý:</p>
+<pre><code>ttct-video-pipeline/           <span class="cmt">← thư mục repo, cũng là BASE mặc định</span>
+├── make_videos.py
+├── export_all_slides.py
+├── Làm Video CSCTCH/
+│   └── Làm Video CSCTCH/                       <span class="cmt">← thư mục "root" của nhóm bài</span>
+│       ├── CSCTCH_Kịch bản Video Bài giảng_4.1.docx
+│       ├── CSCTCH chuong4_ 4.1.pptx
+│       └── VIDEO_OUTPUT/                       <span class="cmt">← script tự tạo</span>
+└── Làm Video NLTKCH/
+    └── Làm Video NLTKCH/
+        ├── 4.1 NLTKCH kịch bản cho 3 video.docx
+        └── 4.1 NLTKCH_ Tiêu chuẩn thiết kế hầm Antigravity.pptx</code></pre>
+  <p><code>BASE</code> mặc định là <strong>thư mục chứa <code>make_videos.py</code></strong>. Nếu dữ liệu nằm chỗ khác, đặt biến môi trường <code>TTCT_BASE</code> thay vì sửa code:</p>
+<pre><code>$env:TTCT_BASE = <span class="str">"D:\TTCT 2026\Audio"</span>     <span class="cmt"># PowerShell</span>
+export TTCT_BASE=<span class="str">"/mnt/d/TTCT 2026/Audio"</span>  <span class="cmt"># bash</span></code></pre>
+</section>
+
+<section id="kich-ban">
+  <h2 class="sec"><span class="num">04</span> Định dạng kịch bản <code>.docx</code></h2>
+  <p><code>parse_script()</code> quét <strong>từng đoạn văn (paragraph)</strong> trong file Word và nhận diện 2 loại dòng.</p>
+
+  <h3>Dòng mở đầu một video</h3>
+  <p>Mỗi video sẽ thành 1 file <code>.mp4</code> riêng:</p>
+<pre><code>VIDEO 1: Tổng quan và định nghĩa về không gian ngầm
+KỊCH BẢN VIDEO 2: Phân loại công trình ngầm (SLIDE 11-20)</code></pre>
+  <ul>
+    <li>Chữ <code>KỊCH BẢN</code> ở đầu là <strong>tuỳ chọn</strong>.</li>
+    <li>Phần <code>(SLIDE 11-20)</code> ở cuối tiêu đề <strong>tự động bị cắt bỏ</strong> — nó chỉ là chú thích, không đưa vào tên file.</li>
+  </ul>
+
+  <h3>Dòng lời bình của một slide</h3>
+  <p>Mỗi dòng thành 1 file <code>.wav</code>:</p>
+<pre><code>Slide 5: <span class="str">"Xin chào các bạn, hôm nay chúng ta sẽ tìm hiểu về..."</span>
+Slide 6: Kết cấu vỏ hầm gồm ba lớp chính, lần lượt là...</code></pre>
+  <ul>
+    <li>Nội dung sau dấu <code>:</code> chính là <strong>lời bình được đọc thành tiếng</strong>. Dấu ngoặc kép bao ngoài sẽ được gỡ bỏ.</li>
+    <li>Số slide phải <strong>khớp với số thứ tự slide trong file <code>.pptx</code></strong> — đây là cầu nối duy nhất giữa kịch bản và bài trình chiếu.</li>
+  </ul>
+
+  <h3>Những dòng bị bỏ qua</h3>
+  <div class="tbl"><table>
+    <tr><th>Dòng</th><th>Vì sao bị bỏ</th></tr>
+    <tr><td><code>Slide 3: (Slide thông tin môn học, chuyển qua slide sau)</code></td><td>Toàn bộ nội dung nằm trong ngoặc đơn → ghi chú dẫn dắt, không phải lời bình</td></tr>
+    <tr><td><code>Hiển thị: sơ đồ mặt cắt ngang hầm</code></td><td>Không khớp mẫu <code>Slide n:</code> hay <code>VIDEO n:</code></td></tr>
+    <tr><td>Dòng trống, tiêu đề chương, ghi chú khác</td><td>Không khớp mẫu</td></tr>
+  </table></div>
+  <div class="note warn"><p><span class="tag">⚠️ Hệ quả quan trọng —</span> slide bị bỏ qua sẽ <strong>không có audio, và không xuất hiện trong video</strong>. Nếu bạn muốn một slide xuất hiện, nó bắt buộc phải có dòng <code>Slide n:</code> với lời bình thực sự.</p></div>
+
+  <h3>Kiểm tra kịch bản trước khi chạy cả pipeline</h3>
+<pre><code><span class="cmt"># kiem_tra.py</span>
+<span class="kw">from</span> make_videos <span class="kw">import</span> LESSONS, load_lesson_script
+
+KEY = <span class="str">"CSCTCH_4.1"</span>
+<span class="kw">for</span> r <span class="kw">in</span> load_lesson_script(KEY, LESSONS[KEY][<span class="str">"docx"</span>]):
+    print(<span class="str">f"V{r['video']} S{r['slide']:02d} | {len(r['text']):4d} ký tự | {r['text'][:60]}"</span>)</code></pre>
+  <p>Đối chiếu số slide in ra với số slide trong PowerPoint; lệch nhau nghĩa là kịch bản thiếu dòng <code>Slide n:</code> nào đó — xem <a href="#patch">mục 10</a>.</p>
+</section>
+
+<section id="lessons">
+  <h2 class="sec"><span class="num">05</span> Khai báo bài giảng trong <code>LESSONS</code></h2>
+  <p>Mỗi bài giảng là một mục trong <code>dict</code> <strong><code>LESSONS</code></strong> ở đầu <code>make_videos.py</code>. Thêm bài mới = thêm một mục:</p>
+<pre><code>LESSONS = {
+    <span class="str">"CSCTCH_4.1"</span>: dict(
+        docx  = CSCTCH_DIR / <span class="str">"CSCTCH_Kịch bản Video Bài giảng_4.1.docx"</span>,
+        pptx  = CSCTCH_DIR / <span class="str">"CSCTCH chuong4_ 4.1.pptx"</span>,
+        root  = CSCTCH_DIR,          <span class="cmt"># thư mục chứa VIDEO_OUTPUT của bài</span>
+        voice = <span class="str">"Minh Đức"</span>,          <span class="cmt"># tên giọng, xem bảng ở mục 6</span>
+        style = <span class="str">"tu_nhien"</span>,          <span class="cmt"># phong cách đọc</span>
+    ),
+    <span class="cmt"># ... thêm bài khác ở đây</span>
+}</code></pre>
+  <div class="tbl"><table>
+    <tr><th>Khoá</th><th>Ý nghĩa</th></tr>
+    <tr><td><code>docx</code></td><td>Đường dẫn kịch bản Word</td></tr>
+    <tr><td><code>pptx</code></td><td>Đường dẫn bài trình chiếu PowerPoint</td></tr>
+    <tr><td><code>root</code></td><td>Thư mục gốc của bài — kết quả ghi vào <code>root/VIDEO_OUTPUT/&lt;key&gt;/</code></td></tr>
+    <tr><td><code>voice</code></td><td>Tên giọng đọc VieNeu-TTS</td></tr>
+    <tr><td><code>style</code></td><td>Phong cách đọc: <code>tu_nhien</code>, <code>tin_tuc</code>, hoặc <code>doc_truyen</code></td></tr>
+  </table></div>
+  <p>Các hằng số khác cũng nằm ở đầu file: <code>FPS = 24</code>, <code>IMG_W, IMG_H = 1920, 1080</code>.</p>
+</section>
+
+<section id="giong">
+  <h2 class="sec"><span class="num">06</span> Chọn giọng đọc</h2>
+  <p>VieNeu-TTS v3 Turbo (48 kHz) có <strong>14 giọng dựng sẵn</strong>. <code>voice</code> và <code>style</code> là <strong>hai tham số độc lập</strong> — cột “Phong cách gốc” chỉ là phong cách mà giọng đó được thu, bạn vẫn có thể ghép giọng <code>Minh Đức</code> với <code>style="tu_nhien"</code> (chính là cấu hình đang dùng cho phần lớn bài giảng trong repo này).</p>
+  <div class="tbl"><table>
+    <tr><th>Giọng</th><th>Giới tính</th><th>Vùng miền</th><th>Phong cách gốc</th></tr>
+    <tr><td><code>Phạm Tuyên</code> <em>(mặc định của model)</em></td><td>Nam</td><td>Bắc</td><td><code>tu_nhien</code></td></tr>
+    <tr><td><code>Minh Đức</code></td><td>Nam</td><td>Bắc</td><td><code>tin_tuc</code></td></tr>
+    <tr><td><code>Thanh Bình</code></td><td>Nam</td><td>Bắc</td><td><code>doc_truyen</code></td></tr>
+    <tr><td><code>Trúc Ly</code></td><td>Nữ</td><td>Bắc</td><td><code>tu_nhien</code></td></tr>
+    <tr><td><code>Đoan Trang</code></td><td>Nữ</td><td>Bắc</td><td><code>tu_nhien</code></td></tr>
+    <tr><td><code>Ngọc Linh</code></td><td>Nữ</td><td>Bắc</td><td><code>doc_truyen</code></td></tr>
+    <tr><td><code>Mai Anh</code></td><td>Nữ</td><td>Bắc</td><td><code>tin_tuc</code></td></tr>
+    <tr><td><code>Xuân Vĩnh</code></td><td>Nam</td><td>Nam</td><td><code>tu_nhien</code></td></tr>
+    <tr><td><code>Thái Sơn</code></td><td>Nam</td><td>Nam</td><td><code>doc_truyen</code></td></tr>
+    <tr><td><code>Minh Triết</code></td><td>Nam</td><td>Nam</td><td><code>tin_tuc</code></td></tr>
+    <tr><td><code>Thục Đoan</code></td><td>Nữ</td><td>Nam</td><td><code>doc_truyen</code></td></tr>
+    <tr><td><code>Thùy Dung</code></td><td>Nữ</td><td>Nam</td><td><code>tin_tuc</code></td></tr>
+    <tr><td><code>Quang Sơn</code></td><td>Nam</td><td>Trung</td><td><code>tu_nhien</code></td></tr>
+    <tr><td><code>Ngọc Trân</code></td><td>Nữ</td><td>Trung</td><td><code>tu_nhien</code></td></tr>
+  </table></div>
+
+  <h3>Nghe thử trước khi quyết định</h3>
+<pre><code><span class="kw">from</span> vieneu <span class="kw">import</span> Vieneu
+
+tts = Vieneu()
+cau_mau = <span class="str">"Xin chào các bạn, hôm nay chúng ta sẽ tìm hiểu về kết cấu vỏ hầm."</span>
+
+<span class="kw">for</span> giong <span class="kw">in</span> [<span class="str">"Minh Đức"</span>, <span class="str">"Phạm Tuyên"</span>, <span class="str">"Trúc Ly"</span>, <span class="str">"Mai Anh"</span>]:
+    tts.save(tts.infer(cau_mau, voice=giong, style=<span class="str">"tu_nhien"</span>), <span class="str">f"thu_{giong}.wav"</span>)</code></pre>
+  <p>Liệt kê toàn bộ giọng của model đang cài:</p>
+<pre><code>python -c <span class="str">"from vieneu import Vieneu; [print(v) for v in Vieneu().list_preset_voices()]"</span></code></pre>
+</section>
+
+<section id="chay">
+  <h2 class="sec"><span class="num">07</span> Chạy pipeline</h2>
+
+  <h3>Cách 1 — Chạy thẳng (đơn giản nhất)</h3>
+<pre><code>python make_videos.py                       <span class="cmt"># làm TẤT CẢ các bài trong LESSONS</span>
+python make_videos.py CSCTCH_4.1            <span class="cmt"># chỉ làm 1 bài</span>
+python make_videos.py CSCTCH_4.1 CH2_damthep NLTKCH_4.2.1   <span class="cmt"># làm nhiều bài</span></code></pre>
+  <p>Script chạy trọn 5 bước cho từng bài và in tiến độ theo thời gian thực:</p>
+<pre><code>==============================================================================
+BAI: CSCTCH_4.1  | giong=Minh Đức | style=tu_nhien
+==============================================================================
+  32 slide, 3 video: V1=10, V2=10, V3=12
+  [tts] 0 audio da co, can sinh 32 audio...
+    [tts] 5/32 (slide 05) | 78s
+    ...
+  [slides] can xuat 32 anh (con lai da co 0)...
+  [slides] xuat 32 anh bang PowerPoint COM.
+  [clips] 32 clip moi (tong 32).
+  [video] TAO: Video 1 - Tổng quan và định nghĩa về không gian ngầm.mp4 (10 slide)
+  XONG BAI CSCTCH_4.1: 3 video -> ...\VIDEO_OUTPUT\CSCTCH_4.1</code></pre>
+  <p>Bài nào lỗi thì script <strong>vẫn chạy tiếp các bài còn lại</strong>, rồi tổng kết ở cuối:</p>
+<pre><code>##############################################################################
+TONG KET
+##############################################################################
+  CSCTCH_4.1       : ('OK', 3)
+  CSCTCH_4.2       : ('LOI', 'Thieu pptx: ...')</code></pre>
+
+  <h3>Cách 2 — Xuất ảnh slide trước, rồi mới chạy</h3>
+  <p><em>Khuyến nghị khi làm nhiều bài.</em> Mở/đóng PowerPoint COM lặp đi lặp lại dễ gây lỗi <code>Server execution failed</code>. <code>export_all_slides.py</code> mở PowerPoint <strong>đúng một lần</strong>, xuất ảnh cho <strong>tất cả</strong> các bài, rồi thoát:</p>
+<pre><code>python export_all_slides.py     <span class="cmt"># bước 1: lấy toàn bộ ảnh slide</span>
+python make_videos.py           <span class="cmt"># bước 2: TTS + ghép video (ảnh đã có, được bỏ qua)</span></code></pre>
+  <div class="note warn"><p><span class="tag">⚠️</span> <code>export_all_slides.py</code> gọi <code>taskkill /F /IM POWERPNT.EXE</code> để dọn tiến trình PowerPoint cũ trước khi mở phiên mới. <strong>Hãy lưu và đóng mọi file PowerPoint đang mở tay trước khi chạy</strong>, kẻo mất nội dung chưa lưu.</p></div>
+  <div class="note tip"><p><span class="tag">💡</span> Chạy với <strong>sandbox tắt / quyền đầy đủ</strong> — PowerPoint COM cần khởi động được tiến trình <code>POWERPNT.EXE</code> thật.</p></div>
+</section>
+
+<section id="ket-qua">
+  <h2 class="sec"><span class="num">08</span> Kết quả đầu ra</h2>
+  <p>Mỗi bài ghi vào <code>&lt;root&gt;/VIDEO_OUTPUT/&lt;key&gt;/</code>:</p>
+<pre><code>VIDEO_OUTPUT/CSCTCH_4.1/
+├── _audio/
+│   ├── slide_01.wav ... slide_32.wav      <span class="cmt"># giọng đọc từng slide (48 kHz)</span>
+├── _slide_images/
+│   ├── slide_01.png ... slide_32.png      <span class="cmt"># ảnh slide 1920×1080</span>
+├── _clips/
+│   ├── slide_01.mp4 ... slide_32.mp4      <span class="cmt"># clip từng slide (ảnh tĩnh + audio)</span>
+├── Video 1 - Tổng quan và định nghĩa về không gian ngầm.mp4    <span class="cmt">← 🎬 SẢN PHẨM</span>
+├── Video 2 - Phân loại CTN và định nghĩa hầm giao thông.mp4    <span class="cmt">← 🎬 SẢN PHẨM</span>
+├── Video 3 - Đặc thù vận hành và hệ thống an toàn sinh tồn.mp4 <span class="cmt">← 🎬 SẢN PHẨM</span>
+└── manifest.json                          <span class="cmt"># lời bình + đường dẫn từng slide</span></code></pre>
+  <p><strong>Thông số video:</strong> H.264 (<code>libx264</code>, <code>-tune stillimage</code>) · 1920×1080 · 24 fps · audio AAC 192 kbps · <code>yuv420p</code> — phát được trên mọi trình duyệt, YouTube, LMS.</p>
+  <p>Tên file video lấy từ tiêu đề <code>VIDEO n:</code> trong kịch bản, sau khi loại bỏ các ký tự Windows cấm (<code>\ / : * ? " &lt; &gt; |</code>).</p>
+  <p><code>manifest.json</code> là danh sách bản ghi <code>{video, video_title, slide, text, audio_path}</code> — dùng để đối chiếu, làm phụ đề, hoặc kiểm tra xem slide nào đã được đọc.</p>
+</section>
+
+<section id="chay-lai">
+  <h2 class="sec"><span class="num">09</span> Chạy lại / sinh lại một phần</h2>
+  <p>Mọi bước đều kiểm tra <strong>file đã tồn tại chưa</strong> trước khi làm. Muốn sinh lại thứ gì, <strong>xoá file đó đi rồi chạy lại</strong> — script sẽ tự dựng lại đúng phần bị thiếu.</p>
+  <div class="tbl"><table>
+    <tr><th>Muốn sinh lại</th><th>Xoá</th><th>Ghi chú</th></tr>
+    <tr><td>Lời đọc của slide 07</td><td><code>_audio/slide_07.wav</code> <strong>và</strong> <code>_clips/slide_07.mp4</code> <strong>và</strong> file <code>Video n - ….mp4</code> chứa nó</td><td>Phải xoá cả clip, nếu không clip cũ vẫn được dùng</td></tr>
+    <tr><td>Ảnh slide 12</td><td><code>_slide_images/slide_12.png</code> <strong>và</strong> <code>_clips/slide_12.mp4</code> <strong>và</strong> video chứa nó</td><td></td></tr>
+    <tr><td>Đổi giọng cả bài</td><td>Toàn bộ <code>_audio/</code>, <code>_clips/</code> và các file <code>Video *.mp4</code></td><td>Giữ lại <code>_slide_images/</code> cho nhanh</td></tr>
+    <tr><td>Chỉ nối lại video</td><td>Các file <code>Video *.mp4</code></td><td>Giữ <code>_clips/</code> — bước nối chỉ mất vài giây</td></tr>
+  </table></div>
+  <p>Ví dụ sinh lại slide 07 của bài <code>CSCTCH_4.1</code> (PowerShell):</p>
+<pre><code>$d = <span class="str">"D:\TTCT 2026\Audio\Làm Video CSCTCH\Làm Video CSCTCH\VIDEO_OUTPUT\CSCTCH_4.1"</span>
+Remove-Item <span class="str">"$d\_audio\slide_07.wav"</span>, <span class="str">"$d\_clips\slide_07.mp4"</span>
+Remove-Item <span class="str">"$d\Video 1 - *.mp4"</span>
+python make_videos.py CSCTCH_4.1</code></pre>
+</section>
+
+<section id="patch">
+  <h2 class="sec"><span class="num">10</span> Vá lỗi kịch bản bằng <code>MANUAL_PATCHES</code></h2>
+  <p>Khi file <code>.docx</code> <strong>thiếu hẳn</strong> một dòng <code>Slide n:</code> (lỗi soạn thảo), slide đó sẽ biến mất khỏi video. Thay vì sửa file Word gốc, khai báo bản vá trong <code>MANUAL_PATCHES</code>:</p>
+<pre><code>MANUAL_PATCHES = {
+    <span class="str">"CH3_tru"</span>: [
+        {<span class="str">"video"</span>: 3, <span class="str">"slide"</span>: 33,
+         <span class="str">"text"</span>: <span class="str">"Cảm ơn các bạn đã theo dõi... Hẹn gặp lại ở video tiếp theo."</span>},
+    ],
+}</code></pre>
+  <p>Bản vá được <code>load_lesson_script()</code> chèn vào đúng vị trí theo số slide. Cơ chế này <strong>cố ý làm thủ công</strong> — script không tự đoán nội dung còn thiếu, để tránh bịa lời bình không có trong kịch bản.</p>
+  <p>Ví dụ có sẵn trong repo: bài <code>CH3_tru</code> nhảy từ <code>Slide 32</code> sang <code>KỊCH BẢN VIDEO 4</code>, bỏ sót <code>Slide 33</code> — là slide “Cảm ơn…” kết thúc Video 3. Bản vá dùng <strong>đúng nguyên văn chữ trên slide đó</strong>.</p>
+</section>
+
+<section id="notebook">
+  <h2 class="sec"><span class="num">11</span> Notebook thăm dò</h2>
+  <p><code>TTS_VieNeu_KichBan_4.1.ipynb</code> là bản khám phá từng bước của cùng pipeline, cho <strong>một bài duy nhất</strong>, có nghe thử audio ngay trong Jupyter.</p>
+<pre><code>jupyter lab TTS_VieNeu_KichBan_4.1.ipynb</code></pre>
+  <div class="tbl"><table>
+    <tr><th>Dùng notebook khi</th><th>Dùng <code>make_videos.py</code> khi</th></tr>
+    <tr><td>Thử giọng, nghe so sánh trực tiếp</td><td>Sản xuất hàng loạt</td></tr>
+    <tr><td>Kịch bản mới, chưa chắc parse đúng</td><td>Kịch bản đã kiểm chứng</td></tr>
+    <tr><td>Cần xem kết quả từng bước</td><td>Cần chạy nền, resumable</td></tr>
+  </table></div>
+  <p>Notebook cũng xử lý được tình huống <strong>số slide trong kịch bản lệch với số slide trong PPTX</strong> qua biến <code>MATCHED_SLIDES</code> (ghi đè tay danh sách slide khớp), và đặt hậu tố <code>_PARTIAL</code> vào tên video chưa đủ slide. Ngoài ra nó hỗ trợ thêm định dạng kịch bản có dòng <code>Lời bình (Voice-over):</code> riêng, bên cạnh định dạng lời bình viết gộp ngay trên dòng <code>Slide n:</code> mà <code>make_videos.py</code> dùng.</p>
+  <div class="note"><p>Notebook dùng <code>SILENCE_BETWEEN_SLIDES = 0.8</code> giây khi ghép audio cả video. <code>make_videos.py</code> không chèn khoảng lặng — nó nối ở mức clip video.</p></div>
+</section>
+
+<section id="su-co">
+  <h2 class="sec"><span class="num">12</span> Xử lý sự cố</h2>
+
+  <h3><code>com_error: Server execution failed</code> khi xuất ảnh slide</h3>
+  <p>PowerPoint COM không khởi động được. Theo thứ tự:</p>
+  <ol>
+    <li>Đóng hết cửa sổ PowerPoint, rồi <code>taskkill /F /IM POWERPNT.EXE</code>.</li>
+    <li>Chạy <code>export_all_slides.py</code> thay vì để <code>make_videos.py</code> tự xuất — nó mở PowerPoint 1 lần cho tất cả các bài và thử lại tối đa 5 lần, mỗi lần cách nhau 3 giây.</li>
+    <li>Chạy trong phiên desktop có tương tác (không phải SSH/service/sandbox).</li>
+    <li>Mở thử file <code>.pptx</code> bằng tay một lần — nếu PowerPoint hỏi kích hoạt bản quyền hay “Protected View”, COM sẽ treo cho tới khi bạn bấm qua.</li>
+  </ol>
+  <div class="note warn"><p>Code <strong>cố ý dùng <code>DispatchEx</code> chứ không phải <code>Dispatch</code></strong>: <code>DispatchEx</code> buộc tạo tiến trình out-of-process mới (<code>CLSCTX_LOCAL_SERVER</code>), còn <code>Dispatch</code> hay báo <code>Server execution failed</code> trong phiên không tương tác. Đừng đổi lại.</p></div>
+
+  <h3><code>com_error: (-2147221021, 'Operation unavailable', …)</code> trong Jupyter</h3>
+  <p>Kernel Jupyter đã khởi tạo COM ở chế độ <strong>MTA</strong> (do event loop asyncio/ZMQ), trong khi PowerPoint COM cần <strong>STA</strong>. Vì vậy mọi lời gọi COM trong repo này đều chạy trong <strong>một <code>threading.Thread</code> riêng</strong> — thread mới chưa từng khởi tạo COM nên có “apartment” sạch. Nếu bạn viết thêm code COM, giữ nguyên khuôn mẫu <code>worker()</code> + <code>pythoncom.CoInitialize()</code> đó.</p>
+
+  <h3>Không có PowerPoint / chạy trên Linux</h3>
+  <p>Cài LibreOffice và bảo đảm <code>soffice</code> nằm trong <code>PATH</code>. Pipeline tự chuyển sang <code>export_slides_libreoffice()</code>: chuyển <code>.pptx</code> → PDF rồi render bằng PyMuPDF ở <code>zoom=2.0</code>. Chất lượng render có thể lệch chút so với PowerPoint (font, hiệu ứng).</p>
+
+  <h3><code>ffmpeg loi:</code> khi nối clip</h3>
+  <p>Bước nối dùng <code>-c copy</code> (không mã hoá lại) nên <strong>mọi clip phải cùng thông số</strong>. Lỗi thường gặp khi trong <code>_clips/</code> còn sót clip cũ tạo bằng cấu hình khác (ví dụ trước khi thêm <code>-vf scale=1920:1080</code>). Cách xử lý: <strong>xoá cả thư mục <code>_clips/</code> của bài đó</strong> rồi chạy lại.</p>
+
+  <h3>Kết quả ra ít slide hơn mong đợi</h3>
+  <p>Kịch bản có dòng <code>Slide n:</code> bị bỏ qua. Chạy đoạn kiểm tra ở <a href="#kich-ban">mục 4</a> và đối chiếu với PPTX. Nguyên nhân hay gặp: nội dung nằm trọn trong ngoặc đơn, hoặc thiếu hẳn dòng <code>Slide n:</code> (→ dùng <a href="#patch"><code>MANUAL_PATCHES</code></a>).</p>
+
+  <h3><code>AssertionError: Thieu docx / Thieu pptx</code></h3>
+  <p>Đường dẫn trong <code>LESSONS</code> không đúng. Kiểm tra nhanh:</p>
+<pre><code><span class="kw">from</span> make_videos <span class="kw">import</span> LESSONS
+
+<span class="kw">for</span> k, c <span class="kw">in</span> LESSONS.items():
+    print(<span class="str">"OK  "</span> <span class="kw">if</span> c[<span class="str">"docx"</span>].exists() <span class="kw">and</span> c[<span class="str">"pptx"</span>].exists() <span class="kw">else</span> <span class="str">"THIẾU"</span>, k)</code></pre>
+  <p>Lưu ý tên thư mục trong bộ dữ liệu gốc có <strong>lặp hai lần</strong> (<code>Làm Video CSCTCH/Làm Video CSCTCH/</code>) do giải nén từ <code>.rar</code>, và một số tên chứa dấu tiếng Việt lẫn dấu <code>)</code> thừa — hãy copy y nguyên.</p>
+
+  <h3>Chữ tiếng Việt hiển thị lỗi trên console</h3>
+  <p><code>make_videos.py</code> đã tự bọc <code>sys.stdout</code>/<code>sys.stderr</code> bằng UTF-8. Nếu vẫn lỗi, đặt <code>$env:PYTHONIOENCODING = "utf-8"</code> trước khi chạy.</p>
+
+  <h3>TTS quá chậm</h3>
+  <p>Kiểm tra có đang chạy CPU hay không. Cài <code>torch</code> bản CUDA (xem <a href="#cai-dat">mục 2</a>) để dùng GPU. Hoặc cứ để chạy nền — pipeline resumable, ngắt giữa chừng không mất dữ liệu đã sinh.</p>
+</section>
+
+<section id="ma-nguon">
+  <h2 class="sec"><span class="num">13</span> Cấu trúc mã nguồn</h2>
+  <div class="tbl"><table>
+    <tr><th>File</th><th>Vai trò</th></tr>
+    <tr><td><code>make_videos.py</code></td><td>Toàn bộ pipeline 5 bước + cấu hình <code>LESSONS</code>, <code>MANUAL_PATCHES</code></td></tr>
+    <tr><td><code>export_all_slides.py</code></td><td>Xuất ảnh slide hàng loạt trong 1 phiên PowerPoint</td></tr>
+    <tr><td><code>TTS_VieNeu_KichBan_4.1.ipynb</code></td><td>Notebook thăm dò từng bước</td></tr>
+    <tr><td><code>requirements.txt</code></td><td>Danh sách thư viện</td></tr>
+    <tr><td><code>docs/</code></td><td>Trang hướng dẫn GitHub Pages (chính là trang này)</td></tr>
+  </table></div>
+  <h3>Các hàm chính trong <code>make_videos.py</code></h3>
+  <div class="tbl"><table>
+    <tr><th>Hàm</th><th>Nhiệm vụ</th></tr>
+    <tr><td><code>parse_script(docx)</code></td><td>Tách <code>.docx</code> → danh sách bản ghi <code>{video, slide, text}</code></td></tr>
+    <tr><td><code>load_lesson_script(key, docx)</code></td><td><code>parse_script()</code> + áp <code>MANUAL_PATCHES</code></td></tr>
+    <tr><td><code>export_slides(pptx, nums, dir)</code></td><td>Xuất ảnh slide còn thiếu (COM → fallback LibreOffice)</td></tr>
+    <tr><td><code>make_slide_clip(img, wav, out)</code></td><td>ffmpeg: ảnh tĩnh + audio → mp4</td></tr>
+    <tr><td><code>concat_clips(clips, out)</code></td><td>ffmpeg concat demuxer, <code>-c copy</code></td></tr>
+    <tr><td><code>process_lesson(key, tts, sr)</code></td><td>Chạy trọn 5 bước cho 1 bài</td></tr>
+  </table></div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p><strong>Mô hình TTS:</strong> <a href="https://github.com/pnnbao97/VieNeu-TTS">VieNeu-TTS</a> — Apache-2.0. Mặc định chèn <strong>watermark âm thanh không nghe được</strong> vào mọi audio sinh ra để đánh dấu nguồn gốc AI-generated; không ảnh hưởng chất lượng nghe.</p>
+    <p><strong>Nội dung bài giảng</strong> (<code>.docx</code>, <code>.pptx</code>, video xuất ra) thuộc về tác giả bài giảng và không được đưa lên repo — <code>.gitignore</code> chặn sẵn các đuôi file đó.</p>
+    <p style="margin-bottom:0"><a href="https://github.com/TrungVuManh/ttct-video-pipeline">github.com/TrungVuManh/ttct-video-pipeline</a></p>
+  </div>
+</footer>
+
+<button class="theme-btn" id="tbtn" aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện sáng/tối">◐</button>
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById('tbtn');
+  try { var s = localStorage.getItem('ttct-theme'); if (s) root.setAttribute('data-theme', s); } catch (e) {}
+  btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-theme');
+    if (!cur) cur = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('ttct-theme', next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

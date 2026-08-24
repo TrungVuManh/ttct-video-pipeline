@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------------
+# Repo nay CHI theo doi ma nguon. Toan bo du lieu bai giang (.docx/.pptx/.rar)
+# va ket qua sinh ra (audio/anh/clip/video) deu bi loai tru - dung lam kho
+# GitHub phinh to hang GB. Chien luoc: chan tat ca, roi mo lai tung file code.
+# ---------------------------------------------------------------------------
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/requirements.txt
+!/make_videos.py
+!/export_all_slides.py
+!/TTS_VieNeu_KichBan_4.1.ipynb
+!/docs/
+!/.github/
+
+# Phong ho: du co lo tay `git add -f`, cac duoi file nang van bi chan
+*.rar
+*.zip
+*.docx
+*.pptx
+*.wav
+*.mp3
+*.mp4
+*.png
+*.jpg
+*.pdf
+__pycache__/
+*.pyc
+VIDEO_OUTPUT/
+outputs*/
+.venv/
+.ipynb_checkpoints/
+
+# ...tru anh dung cho trang docs
+!/docs/**/*.png
+!/docs/**/*.jpg

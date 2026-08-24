@@ -1,0 +1,21 @@
+# Chay: pip install -r requirements.txt
+# Python 3.10 - 3.11 (khuyen nghi 3.11). Mac dinh VieNeu-TTS chay CPU qua ONNX Runtime.
+
+vieneu>=3.2.3          # VieNeu-TTS v3 Turbo (48 kHz) - tong hop giong doc tieng Viet
+python-docx>=1.2.0     # doc kich ban .docx
+python-pptx>=1.0.2     # dem so slide trong .pptx
+imageio-ffmpeg>=0.6.0  # tu tai san binary ffmpeg, khong can cai ffmpeg he thong
+numpy>=1.26
+soundfile>=0.13
+tqdm>=4.66
+
+# --- Chi can khi xuat anh slide ---
+pywin32>=306 ; sys_platform == "win32"   # PowerPoint COM (Windows + MS PowerPoint)
+pymupdf>=1.24                            # fallback: doc PDF do LibreOffice xuat ra
+
+# --- Chi can khi chay notebook ---
+ipykernel>=6.29
+jupyter>=1.0
+
+# --- Tuy chon: tang toc bang GPU NVIDIA (CUDA >= 12.8), cai TRUOC khi cai vieneu ---
+# pip install torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
