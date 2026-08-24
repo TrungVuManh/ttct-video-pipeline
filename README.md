@@ -34,13 +34,14 @@ sau khi bị ngắt là an toàn và không mất công sinh lại từ đầu.
 - [5. Khai báo bài giảng trong `LESSONS`](#5-khai-báo-bài-giảng-trong-lessons)
 - [6. Chọn giọng đọc](#6-chọn-giọng-đọc)
 - [7. Chạy pipeline](#7-chạy-pipeline)
-- [8. Kết quả đầu ra](#8-kết-quả-đầu-ra)
-- [9. Chạy lại / sinh lại một phần](#9-chạy-lại--sinh-lại-một-phần)
-- [10. Vá lỗi kịch bản bằng `MANUAL_PATCHES`](#10-vá-lỗi-kịch-bản-bằng-manual_patches)
-- [11. Notebook thăm dò](#11-notebook-thăm-dò)
-- [12. Xử lý sự cố](#12-xử-lý-sự-cố)
-- [13. Cấu trúc mã nguồn](#13-cấu-trúc-mã-nguồn)
-- [14. Giấy phép & ghi chú](#14-giấy-phép--ghi-chú)
+- [8. Chạy giao diện web (local)](#8-chạy-giao-diện-web-local)
+- [9. Kết quả đầu ra](#9-kết-quả-đầu-ra)
+- [10. Chạy lại / sinh lại một phần](#10-chạy-lại--sinh-lại-một-phần)
+- [11. Vá lỗi kịch bản bằng `MANUAL_PATCHES`](#11-vá-lỗi-kịch-bản-bằng-manual_patches)
+- [12. Notebook thăm dò](#12-notebook-thăm-dò)
+- [13. Xử lý sự cố](#13-xử-lý-sự-cố)
+- [14. Cấu trúc mã nguồn](#14-cấu-trúc-mã-nguồn)
+- [15. Giấy phép & ghi chú](#15-giấy-phép--ghi-chú)
 
 ---
 
@@ -177,7 +178,7 @@ for r in load_lesson_script(KEY, LESSONS[KEY]["docx"]):
 ```
 
 Đối chiếu số slide in ra với số slide trong PowerPoint; lệch nhau nghĩa là kịch bản thiếu dòng
-`Slide n:` nào đó (xem [mục 10](#10-vá-lỗi-kịch-bản-bằng-manual_patches)).
+`Slide n:` nào đó (xem [mục 11](#11-vá-lỗi-kịch-bản-bằng-manual_patches)).
 
 ---
 
@@ -256,6 +257,9 @@ python -c "from vieneu import Vieneu; [print(v) for v in Vieneu().list_preset_vo
 
 ## 7. Chạy pipeline
 
+> 💡 Muốn dùng giao diện web thay vì dòng lệnh (kéo-thả file, xem tiến độ trên trình duyệt)? Xem
+> [mục 8 — Chạy giao diện web (local)](#8-chạy-giao-diện-web-local).
+
 ### Cách 1 — Chạy thẳng (đơn giản nhất)
 
 ```bash
@@ -311,7 +315,44 @@ python make_videos.py           # bước 2: TTS + ghép video (ảnh đã có s
 
 ---
 
-## 8. Kết quả đầu ra
+## 8. Chạy giao diện web (local)
+
+Thay vì gõ lệnh, có thể dùng **bảng điều khiển web chạy ngay trên máy bạn** — kéo-thả file, bấm nút,
+xem tiến độ trực tiếp trên trình duyệt. Đây **không phải trang public** trên GitHub Pages (trang đó
+chỉ là tài liệu tĩnh) — nó khởi động một server nhỏ trên `127.0.0.1`, chỉ máy bạn truy cập được, và
+vẫn dùng đúng PowerPoint COM + VieNeu-TTS + ffmpeg đã cài ở [mục 2](#2-cài-đặt).
+
+```bash
+python run_webapp.py
+```
+
+Lệnh trên tự mở trình duyệt tại `http://127.0.0.1:8787/`. Trang gồm:
+
+- **Bài đã cấu hình sẵn** — danh sách từ `LESSONS` trong `make_videos.py`, mỗi bài hiện sẵn video đã
+  có (nếu đã chạy CLI trước đó), kèm nút **▶ Chạy** để tạo/ sinh lại (có thể đổi giọng/phong cách
+  ngay tại đây trước khi chạy).
+- **Tải lên bài mới** — nhập tên bài, chọn file `.docx` + `.pptx`, chọn giọng/phong cách, bấm
+  **▶ Tạo video** — không cần sửa `LESSONS` trong code. File tải lên được lưu vào
+  `web_uploads/<tên-bài>_<mã>/` dưới `BASE`.
+- **Nhật ký trực tiếp** — log của `process_lesson()` (TTS, xuất ảnh, ghép clip, nối video) được stream
+  qua Server-Sent Events, hiện ngay trên trang, không cần refresh.
+- **Kết quả** — khi xong, video hiện ra để xem thử (`<video>` phát trực tiếp, hỗ trợ tua) và tải
+  xuống.
+
+> ⚠️ **Chỉ chạy 1 tác vụ tại 1 thời điểm** — PowerPoint COM và model TTS dùng chung không an toàn khi
+> chạy song song. Nếu đang có tác vụ chạy, nút "Chạy" ở nơi khác sẽ báo bận (HTTP 409) cho tới khi
+> xong.
+
+Tuỳ chọn cổng/khỏi tự mở trình duyệt:
+
+```bash
+python run_webapp.py --port 9000       # đổi cổng
+python run_webapp.py --no-browser      # không tự mở trình duyệt
+```
+
+---
+
+## 9. Kết quả đầu ra
 
 Mỗi bài ghi vào `<root>/VIDEO_OUTPUT/<key>/`:
 
@@ -340,7 +381,7 @@ chiếu, làm phụ đề, hoặc kiểm tra xem slide nào đã được đọc
 
 ---
 
-## 9. Chạy lại / sinh lại một phần
+## 10. Chạy lại / sinh lại một phần
 
 Mọi bước đều kiểm tra **file đã tồn tại chưa** trước khi làm. Muốn sinh lại thứ gì, **xoá file đó đi
 rồi chạy lại** — script sẽ tự dựng lại đúng phần bị thiếu:
@@ -363,7 +404,7 @@ python make_videos.py CSCTCH_4.1
 
 ---
 
-## 10. Vá lỗi kịch bản bằng `MANUAL_PATCHES`
+## 11. Vá lỗi kịch bản bằng `MANUAL_PATCHES`
 
 Khi file `.docx` **thiếu hẳn** một dòng `Slide n:` (lỗi soạn thảo), slide đó sẽ biến mất khỏi video.
 Thay vì sửa file Word gốc, khai báo bản vá trong `MANUAL_PATCHES` ở [`make_videos.py`](make_videos.py):
@@ -385,7 +426,7 @@ Ví dụ có sẵn trong repo: bài `CH3_tru` nhảy từ `Slide 32` sang `KỊC
 
 ---
 
-## 11. Notebook thăm dò
+## 12. Notebook thăm dò
 
 [`TTS_VieNeu_KichBan_4.1.ipynb`](TTS_VieNeu_KichBan_4.1.ipynb) là bản khám phá từng bước của cùng
 pipeline, cho **một bài duy nhất**, có nghe thử audio ngay trong Jupyter.
@@ -412,7 +453,7 @@ Ngoài ra notebook hỗ trợ thêm **định dạng kịch bản có dòng `L�
 
 ---
 
-## 12. Xử lý sự cố
+## 13. Xử lý sự cố
 
 ### `com_error: Server execution failed` khi xuất ảnh slide
 
@@ -452,7 +493,7 @@ Cách xử lý: **xoá cả thư mục `_clips/` của bài đó** rồi chạy 
 
 Kịch bản có dòng `Slide n:` bị bỏ qua. Chạy đoạn kiểm tra ở [mục 4](#4-định-dạng-kịch-bản-docx) và
 đối chiếu với PPTX. Nguyên nhân hay gặp: nội dung nằm trọn trong ngoặc đơn, hoặc thiếu hẳn dòng
-`Slide n:` (→ dùng [`MANUAL_PATCHES`](#10-vá-lỗi-kịch-bản-bằng-manual_patches)).
+`Slide n:` (→ dùng [`MANUAL_PATCHES`](#11-vá-lỗi-kịch-bản-bằng-manual_patches)).
 
 ### `AssertionError: Thieu docx / Thieu pptx`
 
@@ -480,7 +521,7 @@ Hoặc cứ để chạy nền — pipeline resumable, ngắt giữa chừng kh�
 
 ---
 
-## 13. Cấu trúc mã nguồn
+## 14. Cấu trúc mã nguồn
 
 | File | Vai trò |
 |---|---|
@@ -488,6 +529,9 @@ Hoặc cứ để chạy nền — pipeline resumable, ngắt giữa chừng kh�
 | [`export_all_slides.py`](export_all_slides.py) | Xuất ảnh slide hàng loạt trong 1 phiên PowerPoint |
 | [`TTS_VieNeu_KichBan_4.1.ipynb`](TTS_VieNeu_KichBan_4.1.ipynb) | Notebook thăm dò từng bước |
 | [`requirements.txt`](requirements.txt) | Danh sách thư viện |
+| [`run_webapp.py`](run_webapp.py) | Khởi động bảng điều khiển web local ([mục 8](#8-chạy-giao-diện-web-local)) |
+| [`webapp/app.py`](webapp/app.py) | Server FastAPI bọc `process_lesson()` + API + stream log (SSE) |
+| [`webapp/static/index.html`](webapp/static/index.html) | Giao diện web (1 file, vanilla JS, không cần build) |
 | [`docs/`](docs/) | Trang hướng dẫn GitHub Pages |
 
 Các hàm chính trong `make_videos.py`:
@@ -499,11 +543,11 @@ Các hàm chính trong `make_videos.py`:
 | `export_slides(pptx, nums, dir)` | Xuất ảnh slide còn thiếu (COM → fallback LibreOffice) |
 | `make_slide_clip(img, wav, out)` | ffmpeg: ảnh tĩnh + audio → mp4 |
 | `concat_clips(clips, out)` | ffmpeg concat demuxer, `-c copy` |
-| `process_lesson(key, tts, sr)` | Chạy trọn 5 bước cho 1 bài |
+| `process_lesson(key, cfg, tts, sr)` | Chạy trọn 5 bước cho 1 bài (dùng chung bởi CLI và web) |
 
 ---
 
-## 14. Giấy phép & ghi chú
+## 15. Giấy phép & ghi chú
 
 - **Mô hình TTS:** [VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS) — Apache-2.0.
 - **Watermark:** VieNeu-TTS mặc định chèn **watermark âm thanh không nghe được**

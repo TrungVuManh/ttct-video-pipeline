@@ -17,5 +17,10 @@ pymupdf>=1.24                            # fallback: doc PDF do LibreOffice xuat
 ipykernel>=6.29
 jupyter>=1.0
 
+# --- Chi can khi chay bang dieu khien web local (run_webapp.py) ---
+fastapi>=0.115
+uvicorn[standard]>=0.32
+python-multipart>=0.0.12   # bat buoc de FastAPI nhan upload file (docx/pptx)
+
 # --- Tuy chon: tang toc bang GPU NVIDIA (CUDA >= 12.8), cai TRUOC khi cai vieneu ---
 # pip install torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TTCT Video Pipeline — Bảng điều khiển</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+<style>
+:root{
+  --bg:#fbfaf8; --bg-elev:#ffffff; --bg-sunk:#f2f0ec;
+  --fg:#1c1b19; --fg-muted:#5f5b54; --fg-faint:#8b867d;
+  --line:#e3dfd8; --line-strong:#cfc9bf;
+  --accent:#b0532a; --accent-soft:#fdf0e8;
+  --code-bg:#211f1c; --code-fg:#e9e4db;
+  --ok:#4a7a4d; --err:#b23a3a; --warn:#a97a1f;
+  --mono:ui-monospace,"SFMono-Regular","Cascadia Code","Consolas","Liberation Mono",monospace;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#15140f; --bg-elev:#1d1c17; --bg-sunk:#100f0c;
+    --fg:#eeeae1; --fg-muted:#aaa498; --fg-faint:#7d776c;
+    --line:#2f2d26; --line-strong:#413e35;
+    --accent:#e79068; --accent-soft:#2a1d15;
+    --code-bg:#0e0d0b; --code-fg:#e9e4db;
+    --ok:#7ba37e; --err:#e08585; --warn:#d9b45a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15140f; --bg-elev:#1d1c17; --bg-sunk:#100f0c;
+  --fg:#eeeae1; --fg-muted:#aaa498; --fg-faint:#7d776c;
+  --line:#2f2d26; --line-strong:#413e35;
+  --accent:#e79068; --accent-soft:#2a1d15;
+  --code-bg:#0e0d0b; --code-fg:#e9e4db;
+  --ok:#7ba37e; --err:#e08585; --warn:#d9b45a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15.5px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding:0 1.25rem}
+header{border-bottom:1px solid var(--line);background:radial-gradient(70rem 20rem at 10% -10rem,var(--accent-soft),transparent 70%),var(--bg-elev)}
+header .in{padding:2rem 0 1.6rem}
+h1{font-size:1.7rem;margin:0 0 .3rem;letter-spacing:-.02em}
+.sub{color:var(--fg-muted);margin:0;font-size:.95rem}
+main{padding:2rem 0 4rem}
+section{margin-bottom:2.4rem}
+h2{font-size:1.15rem;margin:0 0 1rem;font-weight:650;display:flex;align-items:center;gap:.5rem}
+h2 .n{font-family:var(--mono);color:var(--accent);font-size:.85rem}
+
+.card{border:1px solid var(--line);border-radius:10px;background:var(--bg-elev);padding:1.1rem 1.25rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.9rem}
+
+.lesson-card{display:flex;flex-direction:column;gap:.6rem}
+.lesson-head{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.lesson-head h3{margin:0;font-size:1rem;font-weight:650}
+.badge{font-family:var(--mono);font-size:.72rem;color:var(--fg-muted);background:var(--bg-sunk);border:1px solid var(--line);padding:.15rem .5rem;border-radius:99px;white-space:nowrap}
+.files{font-size:.78rem;color:var(--fg-faint);font-family:var(--mono)}
+.files .miss{color:var(--err)}
+.videos{display:flex;flex-direction:column;gap:.5rem}
+.video-row{display:flex;align-items:center;gap:.5rem;font-size:.85rem}
+.video-row a.dl{color:var(--accent);text-decoration:none;font-weight:600}
+.video-row a.dl:hover{text-decoration:underline}
+.video-row .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--fg-faint);font-size:.85rem;font-style:italic}
+
+.run-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.2rem}
+select,input[type=text]{
+  font-family:var(--sans);font-size:.83rem;padding:.4rem .55rem;border-radius:6px;
+  border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);
+}
+select{flex:1;min-width:0}
+button{
+  font-family:var(--sans);font-size:.85rem;font-weight:600;padding:.45rem .9rem;border-radius:6px;
+  border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;
+}
+button:hover{filter:brightness(1.07)}
+button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+button.secondary{background:var(--bg-elev);color:var(--fg);border-color:var(--line-strong)}
+
+form#uploadForm{display:grid;gap:.7rem;grid-template-columns:1fr 1fr}
+form#uploadForm .full{grid-column:1/-1}
+form#uploadForm label{display:block;font-size:.78rem;color:var(--fg-muted);margin-bottom:.3rem;font-weight:600}
+form#uploadForm input[type=file]{width:100%;font-size:.82rem}
+
+#jobPanel{position:sticky;bottom:0;background:var(--bg-elev);border:1px solid var(--line-strong);border-radius:10px 10px 0 0;padding:1rem 1.25rem;box-shadow:0 -6px 24px rgba(0,0,0,.12)}
+#jobPanel.hidden{display:none}
+.job-head{display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;flex-wrap:wrap}
+.pill{font-family:var(--mono);font-size:.72rem;padding:.2rem .55rem;border-radius:99px;font-weight:700;letter-spacing:.03em}
+.pill.running{background:var(--accent-soft);color:var(--accent)}
+.pill.done{background:color-mix(in srgb, var(--ok) 18%, transparent);color:var(--ok)}
+.pill.error{background:color-mix(in srgb, var(--err) 18%, transparent);color:var(--err)}
+#logBox{
+  font-family:var(--mono);font-size:.78rem;background:var(--code-bg);color:var(--code-fg);
+  border-radius:7px;padding:.7rem .85rem;max-height:220px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;
+}
+#resultsBox{margin-top:.7rem}
+#resultsBox .videos{margin-top:.4rem}
+
+.toast{position:fixed;top:1rem;right:1rem;background:var(--err);color:#fff;padding:.6rem 1rem;border-radius:8px;font-size:.85rem;z-index:100;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.theme-btn{position:fixed;right:1rem;top:1rem;z-index:50;width:2.3rem;height:2.3rem;border-radius:50%;cursor:pointer;border:1px solid var(--line-strong);background:var(--bg-elev);color:var(--fg);font-size:1rem;display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap in">
+    <h1>🎬 TTCT Video Pipeline</h1>
+    <p class="sub">Bảng điều khiển local — chọn bài có sẵn hoặc tải kịch bản mới, chọn giọng đọc, bấm chạy và xem tiến độ trực tiếp.</p>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+
+  <section>
+    <h2><span class="n">＋</span> Tải lên bài mới</h2>
+    <div class="card">
+      <form id="uploadForm">
+        <div class="full">
+          <label for="f_title">Tên bài (dùng để đặt tên thư mục kết quả)</label>
+          <input type="text" id="f_title" name="title" placeholder="vd. Bài giảng chương 5" required>
+        </div>
+        <div>
+          <label for="f_docx">Kịch bản (.docx)</label>
+          <input type="file" id="f_docx" name="docx" accept=".docx" required>
+        </div>
+        <div>
+          <label for="f_pptx">Slide (.pptx)</label>
+          <input type="file" id="f_pptx" name="pptx" accept=".pptx" required>
+        </div>
+        <div>
+          <label for="f_voice">Giọng đọc</label>
+          <select id="f_voice" name="voice" required></select>
+        </div>
+        <div>
+          <label for="f_style">Phong cách</label>
+          <select id="f_style" name="style" required>
+            <option value="tu_nhien">tự nhiên</option>
+            <option value="tin_tuc">tin tức</option>
+            <option value="doc_truyen">kể chuyện</option>
+          </select>
+        </div>
+        <div class="full">
+          <button type="submit" id="uploadBtn">▶ Tạo video</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">☰</span> Bài đã cấu hình sẵn</h2>
+    <div id="lessonsGrid" class="grid">
+      <p class="empty">Đang tải danh sách bài...</p>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<div id="jobPanel" class="hidden">
+  <div class="wrap">
+    <div class="job-head">
+      <span id="jobPill" class="pill running">ĐANG CHẠY</span>
+      <strong id="jobTitle">—</strong>
+    </div>
+    <div id="logBox"></div>
+    <div id="resultsBox"></div>
+  </div>
+</div>
+
+<button class="theme-btn" id="tbtn" title="Đổi giao diện sáng/tối">◐</button>
+
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById('tbtn');
+  try { var s = localStorage.getItem('ttct-theme'); if (s) root.setAttribute('data-theme', s); } catch (e) {}
+  btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-theme');
+    if (!cur) cur = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('ttct-theme', next); } catch (e) {}
+  });
+})();
+
+const STYLE_LABEL = {tu_nhien: "tự nhiên", tin_tuc: "tin tức", doc_truyen: "kể chuyện"};
+let VOICES = [];
+let busy = false;
+let currentEventSource = null;
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+function fmtSize(mb) { return mb >= 1 ? mb.toFixed(1) + ' MB' : Math.round(mb * 1000) + ' KB'; }
+
+function voiceOptionsHTML(selected) {
+  return VOICES.map(v =>
+    `<option value="${v.name}" ${v.name === selected ? 'selected' : ''}>${v.name} (${v.description})</option>`
+  ).join('');
+}
+function styleOptionsHTML(selected) {
+  return Object.entries(STYLE_LABEL).map(([k, label]) =>
+    `<option value="${k}" ${k === selected ? 'selected' : ''}>${label}</option>`
+  ).join('');
+}
+
+function videosHTML(videos) {
+  if (!videos || videos.length === 0) return '<p class="empty">Chưa có video nào.</p>';
+  return '<div class="videos">' + videos.map(v => `
+    <div class="video-row">
+      <span class="name" title="${v.name}">${v.name}</span>
+      <span class="badge">${fmtSize(v.size_mb)}</span>
+      <a class="dl" href="${v.url}" download="${v.name}">Tải xuống</a>
+    </div>
+  `).join('') + '</div>';
+}
+
+function setBusy(state) {
+  busy = state;
+  document.querySelectorAll('.run-btn, #uploadBtn').forEach(b => b.disabled = state);
+}
+
+async function loadVoices() {
+  const res = await fetch('/api/voices');
+  VOICES = await res.json();
+  document.getElementById('f_voice').innerHTML = voiceOptionsHTML('Minh Đức');
+}
+
+async function loadLessons() {
+  const grid = document.getElementById('lessonsGrid');
+  const res = await fetch('/api/lessons');
+  const lessons = await res.json();
+  if (lessons.length === 0) {
+    grid.innerHTML = '<p class="empty">Chưa có bài nào cấu hình trong LESSONS (make_videos.py).</p>';
+    return;
+  }
+  grid.innerHTML = lessons.map(l => `
+    <div class="card lesson-card" data-key="${l.key}">
+      <div class="lesson-head">
+        <h3>${l.key}</h3>
+        <span class="badge">${l.voice} · ${STYLE_LABEL[l.style] || l.style}</span>
+      </div>
+      <div class="files">
+        docx: <span class="${l.docx_exists ? '' : 'miss'}">${l.docx_exists ? 'có' : 'THIẾU'}</span>
+        &nbsp;·&nbsp;
+        pptx: <span class="${l.pptx_exists ? '' : 'miss'}">${l.pptx_exists ? 'có' : 'THIẾU'}</span>
+      </div>
+      ${videosHTML(l.videos)}
+      <div class="run-row">
+        <select class="voice-sel">${voiceOptionsHTML(l.voice)}</select>
+        <select class="style-sel">${styleOptionsHTML(l.style)}</select>
+        <button class="run-btn" ${(!l.docx_exists || !l.pptx_exists || busy) ? 'disabled' : ''}>▶ Chạy</button>
+      </div>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.lesson-card').forEach(card => {
+    card.querySelector('.run-btn').addEventListener('click', () => {
+      const key = card.dataset.key;
+      const voice = card.querySelector('.voice-sel').value;
+      const style = card.querySelector('.style-sel').value;
+      runLesson(key, voice, style);
+    });
+  });
+}
+
+async function runLesson(key, voice, style) {
+  if (busy) return;
+  try {
+    const res = await fetch(`/api/jobs/lesson/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({voice, style}),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.detail || 'Lỗi khi bắt đầu tác vụ'); return; }
+    attachToJob(data.job_id, key);
+  } catch (e) {
+    toast('Không kết nối được máy chủ: ' + e.message);
+  }
+}
+
+document.getElementById('uploadForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  if (busy) return;
+  const form = ev.target;
+  const fd = new FormData(form);
+  try {
+    const res = await fetch('/api/jobs/upload', {method: 'POST', body: fd});
+    const data = await res.json();
+    if (!res.ok) { toast(data.detail || 'Lỗi khi bắt đầu tác vụ'); return; }
+    attachToJob(data.job_id, fd.get('title'));
+    form.reset();
+    document.getElementById('f_voice').innerHTML = voiceOptionsHTML('Minh Đức');
+  } catch (e) {
+    toast('Không kết nối được máy chủ: ' + e.message);
+  }
+});
+
+function attachToJob(jobId, label) {
+  setBusy(true);
+  const panel = document.getElementById('jobPanel');
+  const pill = document.getElementById('jobPill');
+  const logBox = document.getElementById('logBox');
+  const resultsBox = document.getElementById('resultsBox');
+  panel.classList.remove('hidden');
+  document.getElementById('jobTitle').textContent = label || jobId;
+  pill.textContent = 'ĐANG CHẠY';
+  pill.className = 'pill running';
+  logBox.textContent = '';
+  resultsBox.innerHTML = '';
+
+  if (currentEventSource) currentEventSource.close();
+  const es = new EventSource(`/api/jobs/${jobId}/stream`);
+  currentEventSource = es;
+
+  es.onmessage = (ev) => {
+    const line = JSON.parse(ev.data);
+    logBox.textContent += line + '\n';
+    logBox.scrollTop = logBox.scrollHeight;
+  };
+  es.addEventListener('done', async (ev) => {
+    es.close();
+    setBusy(false);
+    const info = JSON.parse(ev.data);
+    if (info.state === 'error') {
+      pill.textContent = 'LỖI';
+      pill.className = 'pill error';
+      resultsBox.innerHTML = `<p style="color:var(--err)">${info.error || 'Có lỗi xảy ra.'}</p>`;
+    } else {
+      pill.textContent = 'HOÀN TẤT';
+      pill.className = 'pill done';
+      const jr = await fetch(`/api/jobs/${jobId}`);
+      const job = await jr.json();
+      resultsBox.innerHTML = videosHTML(job.videos);
+    }
+    loadLessons();
+  });
+  es.onerror = () => {
+    // Ket noi bi ngat (vd server restart) - khong coi la loi tac vu, chi go co.
+  };
+}
+
+async function resumeIfRunning() {
+  try {
+    const res = await fetch('/api/current');
+    const data = await res.json();
+    if (data.job_id) {
+      const jr = await fetch(`/api/jobs/${data.job_id}`);
+      const job = await jr.json();
+      attachToJob(data.job_id, job.key);
+    }
+  } catch (e) { /* im lang - khong co job dang chay */ }
+}
+
+(async function init() {
+  await loadVoices();
+  await loadLessons();
+  await resumeIfRunning();
+})();
+</script>
+</body>
+</html>

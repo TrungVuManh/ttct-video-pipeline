@@ -252,6 +252,7 @@ footer a{color:var(--accent)}
     <li><a href="#lessons">Khai báo LESSONS</a></li>
     <li><a href="#giong">Chọn giọng đọc</a></li>
     <li><a href="#chay">Chạy pipeline</a></li>
+    <li><a href="#giao-dien-web">Giao diện web (local)</a></li>
     <li><a href="#ket-qua">Kết quả đầu ra</a></li>
     <li><a href="#chay-lai">Sinh lại một phần</a></li>
     <li><a href="#patch">Vá lỗi kịch bản</a></li>
@@ -360,7 +361,7 @@ Slide 6: Kết cấu vỏ hầm gồm ba lớp chính, lần lượt là...</cod
 KEY = <span class="str">"CSCTCH_4.1"</span>
 <span class="kw">for</span> r <span class="kw">in</span> load_lesson_script(KEY, LESSONS[KEY][<span class="str">"docx"</span>]):
     print(<span class="str">f"V{r['video']} S{r['slide']:02d} | {len(r['text']):4d} ký tự | {r['text'][:60]}"</span>)</code></pre>
-  <p>Đối chiếu số slide in ra với số slide trong PowerPoint; lệch nhau nghĩa là kịch bản thiếu dòng <code>Slide n:</code> nào đó — xem <a href="#patch">mục 10</a>.</p>
+  <p>Đối chiếu số slide in ra với số slide trong PowerPoint; lệch nhau nghĩa là kịch bản thiếu dòng <code>Slide n:</code> nào đó — xem <a href="#patch">mục 11</a>.</p>
 </section>
 
 <section id="lessons">
@@ -422,6 +423,7 @@ cau_mau = <span class="str">"Xin chào các bạn, hôm nay chúng ta sẽ tìm 
 
 <section id="chay">
   <h2 class="sec"><span class="num">07</span> Chạy pipeline</h2>
+  <div class="note tip"><p><span class="tag">💡</span> Muốn dùng giao diện web thay vì dòng lệnh (kéo-thả file, xem tiến độ trên trình duyệt)? Xem <a href="#giao-dien-web">mục 8 — Giao diện web (local)</a>.</p></div>
 
   <h3>Cách 1 — Chạy thẳng (đơn giản nhất)</h3>
 <pre><code>python make_videos.py                       <span class="cmt"># làm TẤT CẢ các bài trong LESSONS</span>
@@ -455,8 +457,26 @@ python make_videos.py           <span class="cmt"># bước 2: TTS + ghép video
   <div class="note tip"><p><span class="tag">💡</span> Chạy với <strong>sandbox tắt / quyền đầy đủ</strong> — PowerPoint COM cần khởi động được tiến trình <code>POWERPNT.EXE</code> thật.</p></div>
 </section>
 
+<section id="giao-dien-web">
+  <h2 class="sec"><span class="num">08</span> Giao diện web (local)</h2>
+  <p>Thay vì gõ lệnh, có thể dùng <strong>bảng điều khiển web chạy ngay trên máy bạn</strong> — kéo-thả file, bấm nút, xem tiến độ trực tiếp trên trình duyệt.</p>
+  <div class="note warn"><p><span class="tag">⚠️</span> Đây <strong>không phải trang public</strong> — trang hướng dẫn bạn đang đọc chỉ là tài liệu tĩnh trên GitHub Pages. Lệnh dưới đây khởi động một server nhỏ trên <code>127.0.0.1</code> (chỉ máy bạn truy cập được), dùng đúng PowerPoint COM + VieNeu-TTS + ffmpeg đã cài ở <a href="#cai-dat">mục 2</a>.</p></div>
+<pre><code>python run_webapp.py</code></pre>
+  <p>Lệnh trên tự mở trình duyệt tại <code>http://127.0.0.1:8787/</code>. Trang gồm:</p>
+  <ul>
+    <li><strong>Bài đã cấu hình sẵn</strong> — danh sách từ <code>LESSONS</code> trong <code>make_videos.py</code>, mỗi bài hiện sẵn video đã có (nếu đã chạy CLI trước đó), kèm nút <strong>▶ Chạy</strong> để tạo/sinh lại (đổi giọng/phong cách ngay tại đây trước khi chạy).</li>
+    <li><strong>Tải lên bài mới</strong> — nhập tên bài, chọn file <code>.docx</code> + <code>.pptx</code>, chọn giọng/phong cách, bấm <strong>▶ Tạo video</strong> — không cần sửa <code>LESSONS</code> trong code. File tải lên lưu vào <code>web_uploads/&lt;tên-bài&gt;_&lt;mã&gt;/</code> dưới <code>BASE</code>.</li>
+    <li><strong>Nhật ký trực tiếp</strong> — log của <code>process_lesson()</code> (TTS, xuất ảnh, ghép clip, nối video) stream qua Server-Sent Events, hiện ngay trên trang, không cần refresh.</li>
+    <li><strong>Kết quả</strong> — khi xong, video hiện ra để xem thử (phát trực tiếp, hỗ trợ tua) và tải xuống.</li>
+  </ul>
+  <div class="note warn"><p><span class="tag">⚠️</span> <strong>Chỉ chạy 1 tác vụ tại 1 thời điểm</strong> — PowerPoint COM và model TTS dùng chung không an toàn khi chạy song song. Nếu đang có tác vụ chạy, nút "Chạy" ở nơi khác sẽ báo bận (HTTP 409) cho tới khi xong.</p></div>
+  <p>Tuỳ chọn cổng / khỏi tự mở trình duyệt:</p>
+<pre><code>python run_webapp.py --port 9000       <span class="cmt"># đổi cổng</span>
+python run_webapp.py --no-browser      <span class="cmt"># không tự mở trình duyệt</span></code></pre>
+</section>
+
 <section id="ket-qua">
-  <h2 class="sec"><span class="num">08</span> Kết quả đầu ra</h2>
+  <h2 class="sec"><span class="num">09</span> Kết quả đầu ra</h2>
   <p>Mỗi bài ghi vào <code>&lt;root&gt;/VIDEO_OUTPUT/&lt;key&gt;/</code>:</p>
 <pre><code>VIDEO_OUTPUT/CSCTCH_4.1/
 ├── _audio/
@@ -475,7 +495,7 @@ python make_videos.py           <span class="cmt"># bước 2: TTS + ghép video
 </section>
 
 <section id="chay-lai">
-  <h2 class="sec"><span class="num">09</span> Chạy lại / sinh lại một phần</h2>
+  <h2 class="sec"><span class="num">10</span> Chạy lại / sinh lại một phần</h2>
   <p>Mọi bước đều kiểm tra <strong>file đã tồn tại chưa</strong> trước khi làm. Muốn sinh lại thứ gì, <strong>xoá file đó đi rồi chạy lại</strong> — script sẽ tự dựng lại đúng phần bị thiếu.</p>
   <div class="tbl"><table>
     <tr><th>Muốn sinh lại</th><th>Xoá</th><th>Ghi chú</th></tr>
@@ -492,7 +512,7 @@ python make_videos.py CSCTCH_4.1</code></pre>
 </section>
 
 <section id="patch">
-  <h2 class="sec"><span class="num">10</span> Vá lỗi kịch bản bằng <code>MANUAL_PATCHES</code></h2>
+  <h2 class="sec"><span class="num">11</span> Vá lỗi kịch bản bằng <code>MANUAL_PATCHES</code></h2>
   <p>Khi file <code>.docx</code> <strong>thiếu hẳn</strong> một dòng <code>Slide n:</code> (lỗi soạn thảo), slide đó sẽ biến mất khỏi video. Thay vì sửa file Word gốc, khai báo bản vá trong <code>MANUAL_PATCHES</code>:</p>
 <pre><code>MANUAL_PATCHES = {
     <span class="str">"CH3_tru"</span>: [
@@ -505,7 +525,7 @@ python make_videos.py CSCTCH_4.1</code></pre>
 </section>
 
 <section id="notebook">
-  <h2 class="sec"><span class="num">11</span> Notebook thăm dò</h2>
+  <h2 class="sec"><span class="num">12</span> Notebook thăm dò</h2>
   <p><code>TTS_VieNeu_KichBan_4.1.ipynb</code> là bản khám phá từng bước của cùng pipeline, cho <strong>một bài duy nhất</strong>, có nghe thử audio ngay trong Jupyter.</p>
 <pre><code>jupyter lab TTS_VieNeu_KichBan_4.1.ipynb</code></pre>
   <div class="tbl"><table>
@@ -519,7 +539,7 @@ python make_videos.py CSCTCH_4.1</code></pre>
 </section>
 
 <section id="su-co">
-  <h2 class="sec"><span class="num">12</span> Xử lý sự cố</h2>
+  <h2 class="sec"><span class="num">13</span> Xử lý sự cố</h2>
 
   <h3><code>com_error: Server execution failed</code> khi xuất ảnh slide</h3>
   <p>PowerPoint COM không khởi động được. Theo thứ tự:</p>
@@ -559,13 +579,16 @@ python make_videos.py CSCTCH_4.1</code></pre>
 </section>
 
 <section id="ma-nguon">
-  <h2 class="sec"><span class="num">13</span> Cấu trúc mã nguồn</h2>
+  <h2 class="sec"><span class="num">14</span> Cấu trúc mã nguồn</h2>
   <div class="tbl"><table>
     <tr><th>File</th><th>Vai trò</th></tr>
     <tr><td><code>make_videos.py</code></td><td>Toàn bộ pipeline 5 bước + cấu hình <code>LESSONS</code>, <code>MANUAL_PATCHES</code></td></tr>
     <tr><td><code>export_all_slides.py</code></td><td>Xuất ảnh slide hàng loạt trong 1 phiên PowerPoint</td></tr>
     <tr><td><code>TTS_VieNeu_KichBan_4.1.ipynb</code></td><td>Notebook thăm dò từng bước</td></tr>
     <tr><td><code>requirements.txt</code></td><td>Danh sách thư viện</td></tr>
+    <tr><td><code>run_webapp.py</code></td><td>Khởi động bảng điều khiển web local (<a href="#giao-dien-web">mục 8</a>)</td></tr>
+    <tr><td><code>webapp/app.py</code></td><td>Server FastAPI bọc <code>process_lesson()</code> + API + stream log (SSE)</td></tr>
+    <tr><td><code>webapp/static/index.html</code></td><td>Giao diện web (1 file, vanilla JS, không cần build)</td></tr>
     <tr><td><code>docs/</code></td><td>Trang hướng dẫn GitHub Pages (chính là trang này)</td></tr>
   </table></div>
   <h3>Các hàm chính trong <code>make_videos.py</code></h3>
@@ -576,7 +599,7 @@ python make_videos.py CSCTCH_4.1</code></pre>
     <tr><td><code>export_slides(pptx, nums, dir)</code></td><td>Xuất ảnh slide còn thiếu (COM → fallback LibreOffice)</td></tr>
     <tr><td><code>make_slide_clip(img, wav, out)</code></td><td>ffmpeg: ảnh tĩnh + audio → mp4</td></tr>
     <tr><td><code>concat_clips(clips, out)</code></td><td>ffmpeg concat demuxer, <code>-c copy</code></td></tr>
-    <tr><td><code>process_lesson(key, tts, sr)</code></td><td>Chạy trọn 5 bước cho 1 bài</td></tr>
+    <tr><td><code>process_lesson(key, cfg, tts, sr)</code></td><td>Chạy trọn 5 bước cho 1 bài (dùng chung bởi CLI và web)</td></tr>
   </table></div>
 </section>
 

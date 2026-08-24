@@ -10,9 +10,12 @@
 !/requirements.txt
 !/make_videos.py
 !/export_all_slides.py
+!/run_webapp.py
 !/TTS_VieNeu_KichBan_4.1.ipynb
 !/docs/
 !/.github/
+!/webapp/
+!/webapp/static/
 
 # Phong ho: du co lo tay `git add -f`, cac duoi file nang van bi chan
 *.rar

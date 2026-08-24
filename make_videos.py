@@ -252,8 +252,7 @@ def concat_clips(clip_paths, out_path):
 # ----------------------------------------------------------------------------
 # Xu ly 1 bai
 # ----------------------------------------------------------------------------
-def process_lesson(key, tts, sr):
-    cfg = LESSONS[key]
+def process_lesson(key, cfg, tts, sr):
     docx, pptx, root = cfg["docx"], cfg["pptx"], cfg["root"]
     voice, style = cfg["voice"], cfg["style"]
     print("\n" + "=" * 78)
@@ -352,7 +351,7 @@ def main():
     summary = {}
     for k in keys:
         try:
-            paths = process_lesson(k, tts, sr)
+            paths = process_lesson(k, LESSONS[k], tts, sr)
             summary[k] = ("OK", len(paths))
         except Exception as e:
             import traceback; traceback.print_exc()
